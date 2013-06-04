@@ -7,151 +7,99 @@ html
     link(rel='stylesheet', href='/flot/examples/examples.css') 
     script(src='/flot/jquery.js')
     script(src='/flot/jquery.flot.js')
-    script(src='http://127.0.0.1:3001/socket.io/socket.io.js')
+    script(src='/flot/jquery.flot.time.js')
+    //Uncomment to debug
+    //script(src='http://127.0.0.1:3001/socket.io/socket.io.js')
+    script(src='http://guarded-mesa-1222.herokuapp.com:3001/socket.io/socket.io.js')
     script(type='text/javascript')
         $(function() {
-            var crntHumidity = 0;
+            //Set the address that the socket connection is setup on (look in app.js)
+            //var socket = io.connect('http://127.0.0.1:3001'); //<---Uncomment to debug
+            var socket = io.connect('http://guarded-mesa-1222.herokuapp.com:3001');
 
-            //var socket = io.connect('http://localhost');
-            var socket = io.connect('http://127.0.0.1:3001');
+            //Create a variable for holding the Nest data object
+            var nestDataObject = {};
+            //Create an array for holding the individual plot points inside the Nest data object
+            var nestDataArray = [];
 
-            //alert(theData);
-            //console.log(theData);
-
-            
-            socket.on('getSubscription', function (data) {
-                console.log('Current Temperature: ' + data.current_temperature);
-                //socket.emit('my other event', { my: 'data' });
-            });
-
-
-            // socket.on('getHumidity', function (data) {
-            //     console.log(data);
-            //     crntHumidity = data;
-            //     //socket.emit('my other event', { my: 'data' });
-            // });
-
-            //socket.emit('callMethod', {'methodName':'method3'});
-
-            
-
-            //alert('kevin');
-         
-            // We use an inline data source in the example, usually data would
-            // be fetched from a server
-            var data = [],
-                totalPoints = 300;
-
-                //loginToNest();
-
-            function getRandomData() {
-                if (data.length > 0)
-                    data = data.slice(1);
-
-                    // socket.on('getHumidity', function (data2) {
-                    //     console.log(data2);
-                    //     crntHumidity = data2;
-                    //     //socket.emit('my other event', { my: 'data' });
-                    // });
-
-                // Do a random walk
-                while (data.length < totalPoints) {
-
-                    var prev = data.length > 0 ? data[data.length - 1] : 50,
-                        y = prev + Math.random() * 10 - 5;
-
-                    //     //alert(socket.emit('callMethod', {'methodName':'method3'}));
-                    //     // console.log(
-                    //     //     socket.emit('callMethod', {'methodName':'method3'})
-                    //     //     );
-                    //     //getCurrentHumidity();
-                    //     //alert(crntHumidity);
-                    //     //alert(y);
-
-                    // if (y < 0) {
-                    //     y = 0;
-                    // } else if (y > 100) {
-                    //     y = 100;
-                    // }
-
-                    // y = crntHumidity;
-                    y = getCurrentHumidity();
-
-                    data.push(y);
-                }
-
-                // Zip the generated y values with the x values
-                var res = [];
-                for (var i = 0; i < data.length; ++i) {
-                    res.push([i, data[i]]);
-                }
-
-                return res;
-            }
-
-
-            // Set up the control widget
-            var updateInterval = 300;
-            $("#updateInterval").val(updateInterval).change(function () {
-                var v = $(this).val();
-                if (v && !isNaN(+v)) {
-                    updateInterval = +v;
-                    if (updateInterval < 1) {
-                        updateInterval = 1;
-                    } else if (updateInterval > 2000) {
-                        updateInterval = 2000;
-                    }
-                    $(this).val("" + updateInterval);
-                }
-            });
-
-
-            var plot = $.plot("#placeholder", [ getRandomData() ], {
-                series: {
-                    shadowSize: 0   // Drawing is faster without shadows
+            //Set the options for the Flot chart
+            var flotChartOptions = {
+                lines: {
+                    show: true
                 },
-                yaxis: {
-                    min: 0,
-                    max: 100
+                points: {
+                    show: false
                 },
                 xaxis: {
-                    show: false
+                    mode: "time",
+                    timeformat: "%H:%M:%S",
+                    timezone: "browser"
+                },
+                yaxis: {
+                    tickSize: 1,
+                    tickDecimals: 0
+                }
+            };
+
+            //When socket.emit is called...
+            socket.on('message', function (data) {
+                if(data.message) {
+                    //Add the returned data to the array
+                    nestDataArray.push(data.message);
+
+                    //Add the array to the data object
+                    nestDataObject = [ {'data': nestDataArray} ];
+
+                    //Get the current number of items in the array
+                    var nestDataLength = nestDataObject[0].data.length;
+
+                    //Limit the number of displayed columns to 10
+                    if (nestDataLength > 10) {
+                        //Remove the oldest item from the array
+                        nestDataObject[0].data.splice(0,1);
+                    }
+
+                    //Plot the data on the chart
+                    $.plot("#placeholder", nestDataObject, flotChartOptions);
+                } else {
+                    //There's a problem
+                    console.log("There is a problem:", data);
                 }
             });
 
 
-            function update() {
-                plot.setData([getRandomData()]);
+            ////Uncomment for testing if you don't want to loop forever
+            //theNestData = [];
+            //alreadyFetched = {};
+            //var iteration = 0;
 
-                // Since the axes don't change, we don't need to call plot.setupGrid()
-                plot.draw();
-                setTimeout(update, updateInterval);
+            //Function used to get the data from the node.js server
+            function fetchData() {
+                ////Uncomment for testing if you don't want to loop forever
+                //++iteration;
+
+                socket.emit('send', { message: 'text' });
+
+                //Run this function every 1000 milliseconds to get recent data
+                setTimeout(fetchData, 1000);
+
+                ////Uncomment for testing if you don't want to loop forever
+                //if (iteration < 20) {
+                    //setTimeout(fetchData, 1000);
+                //} else {
+                    //theNestData = [];
+                    //alreadyFetched = {};
+                //}
             }
 
-            function getCurrentHumidity() {
-                socket.on('getHumidity', function (data2) {
-                    //console.log(data2);
-                    return data2;
-                    //crntHumidity = data2;
-                    //socket.emit('my other event', { my: 'data' });
-                });
-            }
-
-            update();
-
-
-            // Add the Flot version string to the footer
-            $("#footer").prepend("Flot " + $.plot.version + " &ndash; ");
-
-            //alert(getCurrentHumidity());
+            //Initial execution
+            setTimeout(fetchData, 1000);
         });
     header
     section#wrapper
       #header
-        h2 Real-Time updates
+        h2 Your Nest Data: IN REAL TIME!
       #content
         #democontainer.demo-container
           #placeholder.demo-placeholder
-        p You can update a chart periodically to get a real-time effect by using a timer to insert the new data in the plot and redraw it.
-      #footer
-        Copyright &copy; 2007 - 2013 IOLA and Ole Laursen
+        p This chart displays the temperature in your house for the most recent 10 seconds, updating every second.

@@ -37,13 +37,12 @@ http.createServer(app).listen(app.get('port'), function(){
 
 
 
+
+
+
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-
-
-
  var app2 = require('http').createServer(handler)
    , io = require('socket.io').listen(app2)
    , fs = require('fs');
@@ -64,47 +63,58 @@ function handler (req, res) {
 }
 
 io.sockets.on('connection', function (socket) {
-	var currentHumidityLevel = getCurrentHumidity();
+    var currentHumidityLevel = getCurrentHumidity();
 
-	//socket.emit('news', { hello: 'world' });
-	//socket.emit('callMethod', { humidityLevel: currentHumidityLevel });
-	socket.emit('getHumidity', currentHumidityLevel);
+    //socket.emit('news', { hello: 'world' });
+    //socket.emit('callMethod', { humidityLevel: currentHumidityLevel });
+    socket.emit('getHumidity', currentHumidityLevel);
 
-	socket.emit('getSubscription', subscribeDone());
+    socket.emit('getTheData', { current_humidity: currentHumidityLevel });
 
-  // socket.on('my other event', function (data) {
-  //   console.log(data);
-  // });
 
-	// socket.on('callMethod', function (data) {
-	// 	if(data['methodName'] == 'method3') {
-	// 	var currentHumidity = getCurrentHumidity();
+    //socket.emit('message', '');
+    //    socket.on('send', function (data) {
+    //        io.sockets.emit('message', data);
+    //    });
+    socket.on('send', function (data) {
+        var currentHumidityLevel = getCurrentHumidity();
+        //data = currentHumidityLevel + '';
+        data.message = currentHumidityLevel;
+        io.sockets.emit('message', data);
+    });
 
-	// 	// exports.method3();
-	// 	//console.log('method3 call');
-	// 	//console.log(getCurrentHumidity());
-	// 	//socket.emit(currentHumidity);
-	// 	return 57;
-	// 	//getCurrentHumidity();
-	// 	}
-	// });
+    // socket.on('my other event', function (data) {
+    //   console.log(data);
+    // });
+
+    // socket.on('callMethod', function (data) {
+    // 	if(data['methodName'] == 'method3') {
+    // 	var currentHumidity = getCurrentHumidity();
+
+    // 	// exports.method3();
+    // 	//console.log('method3 call');
+    // 	//console.log(getCurrentHumidity());
+    // 	//socket.emit(currentHumidity);
+    // 	return 57;
+    // 	//getCurrentHumidity();
+    // 	}
+    // });
 });
 
 
 
-// exports.method3=function(){
-// 	console.log('method3 call');
-// };
+
+
+
+
+
+
 
 
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-
-
-
 
 /**
  *
@@ -149,6 +159,7 @@ function merge(o1, o2) {
     var username = 'krobbins@americandatanetwork.com';
     var password = 'Accord08%';
     var d2 = 0;
+    var d3 = [];
 
 
     /*********************************************************************************************
@@ -220,7 +231,7 @@ function merge(o1, o2) {
                 //nest.setTemperature(ids[0], 70);
                 //nest.setTemperature(70);
                 //nest.setFanModeAuto();
-                subscribe();
+                //subscribe();
                 //nest.setAway();
                 //nest.setHome();
                 //nest.setTargetTemperatureType(ids[0], 'heat');
@@ -242,8 +253,8 @@ function subscribeDone(deviceId, data, type) {
         //console.log(JSON.stringify(data));
 
   //       //io.sockets.on('connection', function (socket) {
-		// 	socket.emit('getSubscription', JSON.stringify(data));
-		// //});
+        // 	socket.emit('getSubscription', JSON.stringify(data));
+        // //});
 
         // console.log(util.format("CURRENT HUMIDITY = %d",
         //     globalDevice.current_humidity));
@@ -259,49 +270,57 @@ function subscribeDone(deviceId, data, type) {
 
 
 function getCurrentHumidity() {
-	//var datas = 0;
-	//Get the information for the specified Nest account
-	nest.fetchStatus(function(data) {
-		//var theDatas = 0;
-		// //Write out the returned JSON object to the console
-		// console.log(data);
+    //var datas = 0;
+    //Get the information for the specified Nest account
+    nest.fetchStatus(function (data) {
+        //var theDatas = 0;
+        // //Write out the returned JSON object to the console
+        // console.log(data);
 
-		//return JSON.stringify(data);
-		//return data;
+        //return JSON.stringify(data);
+        //return data;
 
-		//Loop through each Nest thermostat the user has
-		for (var deviceId in data.device) {
-			//Make sure the "device" object has a "deviceId" property before using it
-			if (data.device.hasOwnProperty(deviceId)) {
-				//Create an object for the current thermostat
-				var sharedDevice = data.shared[deviceId];
+        //Loop through each Nest thermostat the user has
+        for (var deviceId in data.device) {
+            //Make sure the "device" object has a "deviceId" property before using it
+            if (data.device.hasOwnProperty(deviceId)) {
+                //Create an object for the current thermostat
+                var sharedDevice = data.shared[deviceId];
 
-				//console.log(sharedDevice);
+                //console.log(sharedDevice);
 
-				// //Log device information to the console
-				// console.log(util.format("%s [%s], Current temperature = %d F target=%d",
-				//	sharedDevice.name,
-				//	deviceId,
-				//	nest.ctof(sharedDevice.current_temperature),
-				//	nest.ctof(sharedDevice.target_temperature)));
+                // //Log device information to the console
+                // console.log(util.format("%s [%s], Current temperature = %d F target=%d",
+                //	sharedDevice.name,
+                //	deviceId,
+                //	nest.ctof(sharedDevice.current_temperature),
+                //	nest.ctof(sharedDevice.target_temperature)));
 
-				//Create an object for the current thermostat
-				var device = data.device[deviceId];
+                //Create an object for the current thermostat
+                var device = data.device[deviceId];
 
-				//Log device information to the console
-				//console.log(device.current_humidity);
+                //Log device information to the console
+                //console.log(device.current_humidity);
 
-				//theHumidity = device.current_humidity;
+                //theHumidity = device.current_humidity;
 
-				//console.log(util.format("%s",device.current_humidity));
-				//return data;
-				//d2 = device.current_humidity;
-				d2 = nest.ctof(sharedDevice.current_temperature);
-				// return(device.current_humidity);
-				//theDatas = 56;
-			}
-		}
-	});
+                //console.log(util.format("%s",device.current_humidity));
+                //return data;
+                //d2 = device.current_humidity;
+                var currentdate = new Date();
+                var datetime = currentdate.getTime();
 
-	return d2;
+
+                d2 = nest.ctof(sharedDevice.current_temperature);
+                //console.log(sharedDevice);
+                //d3 = sharedDevice;
+                d3 = [datetime, d2];
+                // return(device.current_humidity);
+                //theDatas = 56;
+            }
+        }
+    });
+
+    //return d2;
+    return d3;
 }
